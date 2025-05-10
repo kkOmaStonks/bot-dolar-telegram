@@ -55,9 +55,10 @@ def run_async():
     asyncio.run(enviar())
 
 # 🕒 Horarios programados
-schedule.every().day.at("12:00").do(run_async)
-schedule.every().day.at("15:00").do(run_async)
-schedule.every().day.at("17:00").do(run_async)
+schedule.every().day.at("08:00").do(run_async)  # 12:00 AR
+schedule.every().day.at("11:00").do(run_async)  # 15:00 AR
+schedule.every().day.at("13:00").do(run_async)  # 17:00 AR
+
 
 while True:
     schedule.run_pending()
