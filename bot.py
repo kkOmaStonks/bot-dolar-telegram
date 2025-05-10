@@ -19,17 +19,22 @@ def format_precio(valor):
     return int(valor) if valor == int(valor) else round(valor, 2)
 
 def obtener_dolares():
-    url = 'https://api.bluelytics.com.ar/v2/latest'
+    url = 'https://api.dolarito.ar/api/frontend/quotations/dolar'
     try:
-        r = requests.get(url, timeout=10)
+
+        headers = {
+    'Auth-client':'eb72699e60745f9cd000e0af740092ee'
+        } # validador
+
+        r = requests.get(url, timeout=10,headers=headers)
         data = r.json()
     except:
-        return None  # si falla la conexión, no manda nada
+        return None  # fallas
 
     mensaje = "💵 *Cotización actual:*\n\n"
 
     tipos = {
-        "blue": ("💸", "BLUE"),
+        "informal": ("💸", "BLUE"),
         "oficial": ("🏦", "OFICIAL"),
         "mep": ("📊", "MEP"),
         "ccl": ("🔌", "CCL")
@@ -39,10 +44,21 @@ def obtener_dolares():
     for key, (emoji, nombre) in tipos.items():
         if key in data:
             valores = data.get(key)
-            compra = format_precio(valores.get("value_buy", 0))
-            venta = format_precio(valores.get("value_sell", 0))
-            mensaje += f"{emoji} *{nombre}*\nCompra: ${compra} | Venta: ${venta}\n\n"
+            compra_raw = valores.get("buy")
+            venta_raw = valores.get("sell")
+
+            if not venta_raw:  # si no hay precio de venta, no mostramos nada
+                continue
+
+            compra = format_precio(compra_raw) if compra_raw else None
+            venta = format_precio(venta_raw)
+
+            mensaje += f"{emoji} *{nombre}*\n"
+            if compra:
+                mensaje += f"Compra: ${compra} | "
+            mensaje += f"Venta: ${venta}\n\n"
             alguno = True
+
 
     return mensaje.strip() if alguno else None
 
@@ -54,12 +70,14 @@ async def enviar():
 def run_async():
     asyncio.run(enviar())
 
-# 🕒 Horarios programados
-schedule.every().day.at("08:00").do(run_async)  # 12:00 AR
-schedule.every().day.at("11:00").do(run_async)  # 15:00 AR
-schedule.every().day.at("13:00").do(run_async)  # 17:00 AR
+run_async()
 
+# Horarios programados
+schedule.every().day.at("12:00").do(run_async)
+schedule.every().day.at("15:00").do(run_async)
+schedule.every().day.at("17:00").do(run_async)
 
 while True:
     schedule.run_pending()
     time.sleep(30)
+
